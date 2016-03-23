@@ -1,0 +1,4 @@
+[submodule "thirdparty/wolfssl"]
+	path = thirdparty/wolfssl
+	url = git@github.com:dgarske/wolfssl.git
+	branch = atmel
