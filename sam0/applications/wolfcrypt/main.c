@@ -50,10 +50,11 @@ static func_args args = { 0 };
 
 /* Local Functions */
 double current_time(int reset);
-
+void configure_rtc_calendar(void);
+void HardFault_HandlerC(uint32_t *hardfault_args);
 
 /* Hard fault handler */
-void HardFault_HandlerC( uint32_t *hardfault_args )
+void HardFault_HandlerC(uint32_t *hardfault_args)
 {
     /* These are volatile to try and prevent the compiler/linker optimizing them
     away as the variables never actually get used.  If the debugger won't show the
@@ -219,6 +220,12 @@ void SysTick_Handler(void)
 	gu32MsTicks++;
 }
 
+static void systick_init(void)
+{
+	uint32_t cycles_per_ms = system_gclk_gen_get_hz(0);
+	cycles_per_ms /= 1000;
+    SysTick_Config(cycles_per_ms);
+}
 
 int main(void) 
 {
@@ -227,6 +234,7 @@ int main(void)
 	
 	/* Initialize system */
 	system_init();
+    systick_init();
     delay_init();
     configure_rtc_calendar();
 	configure_console();
@@ -257,14 +265,7 @@ int main(void)
 double current_time(int reset)
 {
     double time;
-	struct rtc_calendar_time rtcTime;
-
 	(void)reset;
-
-	/* Get current time */
-	rtc_calendar_get_time(&rtc_instance, &rtcTime);
-
-    time = rtcTime.second;
-    time += ((double)(gu32MsTicks % 1000)) / 1000;
+    time = ((double)gu32MsTicks) / 1000;
     return time;
 }

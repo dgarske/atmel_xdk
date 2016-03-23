@@ -53,7 +53,7 @@ TARGET_SRAM = wolfcrypt_sram.elf
 # List of C source files.
 CSRCS = \
        common/utils/interrupt/interrupt_sam_nvic.c        \
-       common2/services/delay/sam0/systick_counter.c      \
+       common2/services/delay/sam0/cycle_counter.c        \
        sam0/applications/wolfcrypt/main.c                 \
        sam0/boards/samd21_xplained_pro/board_init.c       \
        sam0/drivers/port/port.c                           \
@@ -165,7 +165,7 @@ CPPFLAGS = \
        -D USART_CALLBACK_MODE=true                        \
        -D __SAMD21J18A__                                  \
        -D EXTINT_CALLBACK_MODE=true                       \
-       -D SYSTICK_MODE
+       -D CYCLE_MODE
 
 # Extra flags to use when linking
 LDFLAGS = \
