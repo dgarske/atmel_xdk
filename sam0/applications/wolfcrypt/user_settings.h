@@ -84,7 +84,7 @@ extern "C" {
     /* ECC 256 (256-bits + 32-bits for extra digit) */
     #undef  FP_MAX_BITS_ECC
     #define FP_MAX_BITS_ECC     288
-    
+
     #undef  ALT_ECC_SIZE
     #define ALT_ECC_SIZE
 #endif
@@ -119,9 +119,10 @@ extern "C" {
 /* ------------------------------------------------------------------------- */
 /* Debugging */
 /* ------------------------------------------------------------------------- */
+/* To debug: Enable the WOLFSSL_DEBUG and disable NO_ERROR_STRINGS */
 #undef  WOLFSSL_DEBUG
-#define WOLFSSL_DEBUG
-    
+//#define WOLFSSL_DEBUG
+
 #undef  NO_ERROR_STRINGS
 #define NO_ERROR_STRINGS
 
@@ -165,7 +166,7 @@ extern "C" {
 
 #undef  NO_DSA
 #define NO_DSA
-    
+
 #undef  NO_DH
 #define NO_DH
 

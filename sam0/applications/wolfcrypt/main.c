@@ -30,23 +30,19 @@
 #include <asf.h>
 #include <delay.h>
 #include <rtc_calendar.h>
+#include <tcc.h>
 
 #include "conf_uart_serial.h"
 
+/* Configure clock debug output pins */
+#ifdef DEBUG
+    #define DEBUG_CLOCKS
+#endif
+
+/* Driver instances */
 static struct usart_module cdc_uart_module;
 struct rtc_module rtc_instance;
-
-/** SysTick counter to avoid busy wait delay. */
-volatile uint32_t gu32MsTicks = 0;
-
-typedef struct func_args {
-    int    argc;
-    char** argv;
-    int    return_code;
-} func_args;
-
-static func_args args = { 0 };
-
+struct tcc_module tcc_instance;
 
 /* Local Functions */
 double current_time(int reset);
@@ -86,8 +82,8 @@ void HardFault_HandlerC(uint32_t *hardfault_args)
 
     // Configurable Fault Status Register
     // Consists of MMSR, BFSR and UFSR
-	_CFSR = (*((volatile uint32_t *)(0xE000ED28)));	
-											
+	_CFSR = (*((volatile uint32_t *)(0xE000ED28)));
+
 	// Hard Fault Status Register
 	_HFSR = (*((volatile uint32_t *)(0xE000ED2C)));
 
@@ -124,7 +120,7 @@ void HardFault_HandlerC(uint32_t *hardfault_args)
 	__asm("BKPT #0\n");
 }
 
-__attribute__( ( naked ) ) 
+__attribute__( ( naked ) )
 void HardFault_Handler(void)
 {
 	__asm(
@@ -140,6 +136,24 @@ void HardFault_Handler(void)
 		"  ldr r2, =HardFault_HandlerC \n"
 		"  bx r2               \n"
 	);
+}
+
+/**
+ * Configure TCC
+ */
+static void configure_tcc(void)
+{
+	struct tcc_config tcc_conf;
+	tcc_get_config_defaults(&tcc_conf, TCC0);
+
+    /**
+     * Timer period is 1s = Prescaler(1024) * Period(46875) / Clock(48Mhz).
+     */
+	tcc_conf.counter.clock_source = GCLK_GENERATOR_1;
+	tcc_conf.counter.period = system_cpu_clock_get_hz() / (64 * 1000 / 100);
+	tcc_conf.counter.clock_prescaler = TCC_CLOCK_PRESCALER_DIV64;
+	tcc_init(&tcc_instance, TCC0, &tcc_conf);
+	tcc_enable(&tcc_instance);
 }
 
 /**
@@ -163,7 +177,7 @@ void configure_rtc_calendar(void)
 	/* Initialize RTC in calendar mode. */
 	struct rtc_calendar_config config_rtc_calendar;
 	struct rtc_calendar_time time;
-    
+
 	rtc_calendar_get_config_defaults(&config_rtc_calendar);
 
 #ifdef ENABLE_RTC_ALARM
@@ -212,32 +226,60 @@ static void configure_console(void)
 	usart_enable(&cdc_uart_module);
 }
 
-/*
- * \brief SysTick handler used to measure precise delay.
- */
-void SysTick_Handler(void)
+#ifdef DEBUG_CLOCKS
+static void clock_debug_init(void)
 {
-	gu32MsTicks++;
-}
+	struct system_pinmux_config pin_clk_conf;
 
-static void systick_init(void)
-{
-	uint32_t cycles_per_ms = system_gclk_gen_get_hz(0);
-	cycles_per_ms /= 1000;
-    SysTick_Config(cycles_per_ms);
-}
+    /* Output GCLK0 on PB22 */
+	system_pinmux_get_config_defaults(&pin_clk_conf);
+	pin_clk_conf.direction = PORT_PIN_DIR_OUTPUT;
+	pin_clk_conf.input_pull = SYSTEM_PINMUX_PIN_PULL_NONE;
+	pin_clk_conf.mux_position = PINMUX_PB22H_GCLK_IO0 & 0xFFFF;
+	system_pinmux_pin_set_config(PINMUX_PB22H_GCLK_IO0 >> 16, &pin_clk_conf);
 
-int main(void) 
+    /* Output GCLK2 on PB16 */
+	system_pinmux_get_config_defaults(&pin_clk_conf);
+	pin_clk_conf.direction = PORT_PIN_DIR_OUTPUT;
+	pin_clk_conf.input_pull = SYSTEM_PINMUX_PIN_PULL_NONE;
+	pin_clk_conf.mux_position = PINMUX_PB16H_GCLK_IO2 & 0xFFFF;
+	system_pinmux_pin_set_config(PINMUX_PB16H_GCLK_IO2 >> 16, &pin_clk_conf);
+}
+#endif
+
+
+/* WolfCrypt args */
+typedef struct func_args {
+    int    argc;
+    char** argv;
+    int    return_code;
+} func_args;
+
+static func_args args = { 0 };
+
+int main(void)
 {
     int test_num = 0;
 	const uint8_t welcomeStr[] = "Atmel SAMD21 wolfCrypt Test/Benchmark\r\n";
-	
+	struct port_config pin;
+
 	/* Initialize system */
 	system_init();
-    systick_init();
     delay_init();
-    configure_rtc_calendar();
+
+#ifdef DEBUG_CLOCKS
+    clock_debug_init();
+#endif
+
 	configure_console();
+    configure_tcc();
+    configure_rtc_calendar();
+
+    /* Configure LED */
+	port_get_config_defaults(&pin);
+	pin.direction = PORT_PIN_DIR_OUTPUT;
+	port_pin_set_config(LED0_PIN, &pin);
+	port_pin_set_output_level(LED0_PIN, LED0_INACTIVE);
 
     /* Send welcome message to UART */
 	usart_write_buffer_wait(&cdc_uart_module, welcomeStr, sizeof(welcomeStr));
@@ -258,14 +300,14 @@ int main(void)
 
         test_num++;
     } while(args.return_code == 0);
-    
+
     return 0;
 }
 
 double current_time(int reset)
 {
-    double time;
-	(void)reset;
-    time = ((double)gu32MsTicks) / 1000;
-    return time;
+    uint32_t timer = tcc_get_count_value(&tcc_instance);
+    printf("Timer=%u\n", timer);
+    port_pin_toggle_output_level(LED0_PIN);
+    return (double)timer / 1000;
 }

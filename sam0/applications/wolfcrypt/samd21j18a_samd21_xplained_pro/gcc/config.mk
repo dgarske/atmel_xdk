@@ -53,7 +53,7 @@ TARGET_SRAM = wolfcrypt_sram.elf
 # List of C source files.
 CSRCS = \
        common/utils/interrupt/interrupt_sam_nvic.c        \
-       common2/services/delay/sam0/cycle_counter.c        \
+       common2/services/delay/sam0/systick_counter.c      \
        sam0/applications/wolfcrypt/main.c                 \
        sam0/boards/samd21_xplained_pro/board_init.c       \
        sam0/drivers/port/port.c                           \
@@ -61,6 +61,7 @@ CSRCS = \
        sam0/drivers/sercom/sercom.c                       \
        sam0/drivers/sercom/sercom_interrupt.c             \
        sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.c        \
+       sam0/drivers/tcc/tcc.c                             \
        sam0/drivers/sercom/usart/usart.c                  \
        sam0/drivers/sercom/usart/usart_interrupt.c        \
        sam0/drivers/system/clock/clock_samd21_r21_da/clock.c \
@@ -85,6 +86,7 @@ INC_PATH = \
        common/utils                                       \
        sam0/applications/wolfcrypt                        \
        sam0/applications/wolfcrypt/samd21j18a_samd21_xplained_pro \
+       sam0/applications/wolfcrypt/samd21j18a_samd21_xplained_pro/gcc \
        sam0/boards                                        \
        sam0/boards/samd21_xplained_pro                    \
        sam0/drivers/port                                  \
@@ -93,6 +95,7 @@ INC_PATH = \
        sam0/drivers/sercom/i2c/i2c_sam0                   \
        sam0/drivers/sercom/usart                          \
        sam0/drivers/rtc                                   \
+       sam0/drivers/tcc                                   \
        sam0/drivers/system                                \
        sam0/drivers/system/clock                          \
        sam0/drivers/system/clock/clock_samd21_r21_da      \
@@ -110,8 +113,7 @@ INC_PATH = \
        sam0/utils/preprocessor                            \
        sam0/utils/stdio/stdio_serial                      \
        thirdparty/CMSIS/Include                           \
-       thirdparty/CMSIS/Lib/GCC                           \
-       sam0/applications/wolfcrypt/samd21j18a_samd21_xplained_pro/gcc
+       thirdparty/CMSIS/Lib/GCC
 
 # Additional search paths for libraries.
 LIB_PATH =  \
@@ -165,7 +167,11 @@ CPPFLAGS = \
        -D USART_CALLBACK_MODE=true                        \
        -D __SAMD21J18A__                                  \
        -D EXTINT_CALLBACK_MODE=true                       \
-       -D CYCLE_MODE
+       -D SYSTICK_MODE \
+       -D TCC_ASYNC=false
+
+# Copy CPPFLAGS to ASM flags
+ASFLAGS += $(CPPFLAGS)
 
 # Extra flags to use when linking
 LDFLAGS = \
@@ -235,9 +241,23 @@ CSRCS += thirdparty/cryptoauthlib/atca_iface.c
 CSRCS += thirdparty/cryptoauthlib/atca_command.c
 CSRCS += thirdparty/cryptoauthlib/atca_device.c
 CSRCS += thirdparty/cryptoauthlib/atca_cfgs.c
+CSRCS += thirdparty/cryptoauthlib/host/atca_host.c
 CSRCS += thirdparty/cryptoauthlib/hal/atca_hal.c
 CSRCS += thirdparty/cryptoauthlib/hal/hal_samd21_i2c_asf.c
 CSRCS += thirdparty/cryptoauthlib/hal/hal_samd21_timer_asf.c
+CSRCS += thirdparty/cryptoauthlib/provision/provision.c
+CSRCS += thirdparty/cryptoauthlib/provision/cert_def_1_signer.c
+CSRCS += thirdparty/cryptoauthlib/provision/cert_def_2_device.c
+CSRCS += thirdparty/cryptoauthlib/crypto/atca_crypto_sw_sha1.c
+CSRCS += thirdparty/cryptoauthlib/crypto/atca_crypto_sw_sha2.c
+CSRCS += thirdparty/cryptoauthlib/crypto/hashes/sha1_routines.c
+CSRCS += thirdparty/cryptoauthlib/crypto/hashes/sha2_routines.c
+CSRCS += thirdparty/cryptoauthlib/atcacert/atcacert_date.c
+CSRCS += thirdparty/cryptoauthlib/atcacert/atcacert_client.c
+CSRCS += thirdparty/cryptoauthlib/atcacert/atcacert_def.c
+CSRCS += thirdparty/cryptoauthlib/atcacert/atcacert_der.c
+CSRCS += thirdparty/cryptoauthlib/atcacert/atcacert_host_hw.c
+CSRCS += thirdparty/cryptoauthlib/atcacert/atcacert_host_sw.c
 
 #CryptoAuthLib includes
 INC_PATH += thirdparty/cryptoauthlib
