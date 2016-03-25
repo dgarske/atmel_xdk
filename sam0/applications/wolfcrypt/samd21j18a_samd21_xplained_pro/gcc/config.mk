@@ -62,6 +62,7 @@ CSRCS = \
        sam0/drivers/sercom/sercom_interrupt.c             \
        sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.c        \
        sam0/drivers/tcc/tcc.c                             \
+       sam0/drivers/tcc/tcc_callback.c                    \
        sam0/drivers/sercom/usart/usart.c                  \
        sam0/drivers/sercom/usart/usart_interrupt.c        \
        sam0/drivers/system/clock/clock_samd21_r21_da/clock.c \
@@ -168,7 +169,7 @@ CPPFLAGS = \
        -D __SAMD21J18A__                                  \
        -D EXTINT_CALLBACK_MODE=true                       \
        -D SYSTICK_MODE \
-       -D TCC_ASYNC=false
+       -D TCC_ASYNC=true
 
 # Copy CPPFLAGS to ASM flags
 ASFLAGS += $(CPPFLAGS)

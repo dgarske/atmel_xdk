@@ -31,13 +31,12 @@
 #include <delay.h>
 #include <rtc_calendar.h>
 #include <tcc.h>
+#include <tcc_callback.h>
 
 #include "conf_uart_serial.h"
 
 /* Configure clock debug output pins */
-#ifdef DEBUG
-    #define DEBUG_CLOCKS
-#endif
+#define DEBUG_CLOCKS
 
 /* Driver instances */
 static struct usart_module cdc_uart_module;
@@ -138,6 +137,14 @@ void HardFault_Handler(void)
 	);
 }
 
+static uint32_t secondCount = 0;
+static void tcc_callback_overflow(
+		struct tcc_module *const module_inst)
+{
+	secondCount++;
+    port_pin_toggle_output_level(LED0_PIN);
+}
+
 /**
  * Configure TCC
  */
@@ -147,13 +154,16 @@ static void configure_tcc(void)
 	tcc_get_config_defaults(&tcc_conf, TCC0);
 
     /**
-     * Timer period is 1s = Prescaler(1024) * Period(46875) / Clock(48Mhz).
+     * Timer period is 1ms = Prescaler(16) * Period(2000) / Clock(32khz).
      */
 	tcc_conf.counter.clock_source = GCLK_GENERATOR_1;
-	tcc_conf.counter.period = system_cpu_clock_get_hz() / (64 * 1000 / 100);
-	tcc_conf.counter.clock_prescaler = TCC_CLOCK_PRESCALER_DIV64;
+	tcc_conf.counter.period = 2000;
+	tcc_conf.counter.clock_prescaler = TCC_CLOCK_PRESCALER_DIV16;
 	tcc_init(&tcc_instance, TCC0, &tcc_conf);
 	tcc_enable(&tcc_instance);
+    
+	tcc_register_callback(&tcc_instance, tcc_callback_overflow, TCC_CALLBACK_OVERFLOW);
+    tcc_enable_callback(&tcc_instance, TCC_CALLBACK_OVERFLOW);
 }
 
 /**
@@ -227,23 +237,22 @@ static void configure_console(void)
 }
 
 #ifdef DEBUG_CLOCKS
-static void clock_debug_init(void)
+static void set_pin_mux(uint32_t mux)
 {
 	struct system_pinmux_config pin_clk_conf;
-
+	system_pinmux_get_config_defaults(&pin_clk_conf);
+	pin_clk_conf.direction = PORT_PIN_DIR_OUTPUT;
+	pin_clk_conf.input_pull = SYSTEM_PINMUX_PIN_PULL_NONE;
+	pin_clk_conf.mux_position = mux & 0xFFFF;
+	system_pinmux_pin_set_config(mux >> 16, &pin_clk_conf);
+}
+static void clock_debug_init(void)
+{
     /* Output GCLK0 on PB22 */
-	system_pinmux_get_config_defaults(&pin_clk_conf);
-	pin_clk_conf.direction = PORT_PIN_DIR_OUTPUT;
-	pin_clk_conf.input_pull = SYSTEM_PINMUX_PIN_PULL_NONE;
-	pin_clk_conf.mux_position = PINMUX_PB22H_GCLK_IO0 & 0xFFFF;
-	system_pinmux_pin_set_config(PINMUX_PB22H_GCLK_IO0 >> 16, &pin_clk_conf);
+    set_pin_mux(PINMUX_PB22H_GCLK_IO0);
 
-    /* Output GCLK2 on PB16 */
-	system_pinmux_get_config_defaults(&pin_clk_conf);
-	pin_clk_conf.direction = PORT_PIN_DIR_OUTPUT;
-	pin_clk_conf.input_pull = SYSTEM_PINMUX_PIN_PULL_NONE;
-	pin_clk_conf.mux_position = PINMUX_PB16H_GCLK_IO2 & 0xFFFF;
-	system_pinmux_pin_set_config(PINMUX_PB16H_GCLK_IO2 >> 16, &pin_clk_conf);
+    /* Output GCLK1 on PB23 */
+    set_pin_mux(PINMUX_PB23H_GCLK_IO1);
 }
 #endif
 
@@ -307,7 +316,6 @@ int main(void)
 double current_time(int reset)
 {
     uint32_t timer = tcc_get_count_value(&tcc_instance);
-    printf("Timer=%u\n", timer);
-    port_pin_toggle_output_level(LED0_PIN);
-    return (double)timer / 1000;
+    printf("timer=%u\n", timer);
+    return (double)secondCount + (((double)timer / 2) / 1000);
 }
