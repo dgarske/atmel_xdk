@@ -135,17 +135,10 @@ ATCA_STATUS atDeriveKey(ATCACommand cacmd, ATCAPacket *packet, bool hasMAC )
 
 	// hasMAC must be given since the packet does not have any implicit information to
 	// know if it has a mac or not unless the size is preset
-	switch ( hasMAC ) {
-	case true:
-		packet->txsize = DERIVE_KEY_COUNT_LARGE;
-		break;
-	case false:
-		packet->txsize = DERIVE_KEY_COUNT_SMALL;
-		break;
-	}
-
+	packet->txsize = hasMAC ? DERIVE_KEY_COUNT_LARGE : DERIVE_KEY_COUNT_SMALL;
 	packet->rxsize = DERIVE_KEY_RSP_SIZE;
 	atCalcCrc( packet );
+
 	return ATCA_SUCCESS;
 }
 
@@ -202,16 +195,7 @@ ATCA_STATUS atGenKey(ATCACommand cacmd, ATCAPacket *packet, bool isPubKey )
 
 	// Set the opcode & parameters
 	packet->opcode = ATCA_GENKEY;
-
-	switch ( isPubKey ) {
-	case true:
-		packet->txsize = GENKEY_COUNT_DATA;
-		break;
-	case false:
-		packet->txsize = GENKEY_COUNT;
-		break;
-	}
-
+	packet->txsize = isPubKey ? GENKEY_COUNT_DATA : GENKEY_COUNT;
 	packet->rxsize = GENKEY_RSP_SIZE_LONG;
 
 	atCalcCrc( packet );
