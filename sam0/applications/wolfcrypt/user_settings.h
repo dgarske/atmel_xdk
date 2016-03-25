@@ -36,13 +36,18 @@ extern "C" {
 #define USE_FAST_MATH
 
 #undef  TFM_TIMING_RESISTANT
-#define TFM_TIMING_RESISTANT
+//#define TFM_TIMING_RESISTANT
 
+#undef  TFM_ASM
+#define TFM_ASM
+
+/* Use TFM optimizations for ECC 256 */
+#undef  TFM_ECC256
+#define TFM_ECC256
 
 /* ------------------------------------------------------------------------- */
 /* Enable Features */
 /* ------------------------------------------------------------------------- */
-/* ECC */
 #undef  KEEP_PEER_CERT
 #define KEEP_PEER_CERT
 
@@ -58,6 +63,16 @@ extern "C" {
     /* Custom Curve Config */
     #undef  ECC_USER_CURVES
     #define ECC_USER_CURVES
+    
+    /* Fixed point cache */
+    #undef  FP_ECC
+    //#define FP_ECC
+
+    /* Bits / Entries */
+    #undef  FP_ENTRIES
+    #define FP_ENTRIES  2
+    #undef  FP_LUT
+    #define FP_LUT      4
 
     /* Enable only P-256 */
     #undef NO_ECC256
@@ -71,11 +86,7 @@ extern "C" {
     /* Optional ECC calculation method */
     /* Note: doubles heap usage, but slightly faster */
     #undef  ECC_SHAMIR
-    //#define ECC_SHAMIR
-
-    /* Use TFM optimizations for ECC 256 */
-    #undef  TFM_ECC256
-    #define TFM_ECC256
+    #define ECC_SHAMIR
 
     /* Reduces heap usage, but much slower */
     #undef  ECC_TIMING_RESISTANT
@@ -110,7 +121,7 @@ extern "C" {
 #define USE_CERT_BUFFERS_2048
 
 #undef  NO_CRYPT_TEST
-//#define NO_CRYPT_TEST
+#define NO_CRYPT_TEST
 
 #undef  NO_CRYPT_BENCHMARK
 //#define NO_CRYPT_BENCHMARK

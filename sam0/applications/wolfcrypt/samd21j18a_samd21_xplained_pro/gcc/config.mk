@@ -60,6 +60,8 @@ CSRCS = \
        sam0/drivers/sercom/i2c/i2c_sam0/i2c_master.c      \
        sam0/drivers/sercom/sercom.c                       \
        sam0/drivers/sercom/sercom_interrupt.c             \
+       sam0/drivers/rtc/rtc_sam_d_r/rtc_count.c           \
+       sam0/drivers/rtc/rtc_sam_d_r/rtc_count_interrupt.c \
        sam0/drivers/rtc/rtc_sam_d_r/rtc_calendar.c        \
        sam0/drivers/tcc/tcc.c                             \
        sam0/drivers/tcc/tcc_callback.c                    \
@@ -141,7 +143,7 @@ DBGFLAGS =
 
 # Application optimization used during compilation and linking:
 # -O0, -O1, -O2, -O3 or -Os
-OPTIMIZATION = 
+OPTIMIZATION = -O0
 
 # Extra flags to use when archiving.
 ARFLAGS = 
@@ -168,15 +170,16 @@ CPPFLAGS = \
        -D USART_CALLBACK_MODE=true                        \
        -D __SAMD21J18A__                                  \
        -D EXTINT_CALLBACK_MODE=true                       \
-       -D SYSTICK_MODE \
-       -D TCC_ASYNC=true
+       -D SYSTICK_MODE                                    \
+       -D TCC_ASYNC=true                                  \
+       -D RTC_COUNT_ASYNC=true
 
 # Copy CPPFLAGS to ASM flags
 ASFLAGS += $(CPPFLAGS)
 
 # Extra flags to use when linking
 LDFLAGS = \
-    -Xlinker --defsym=STACK_SIZE=0x6000 \
+    -Xlinker --defsym=STACK_SIZE=0x4000 \
     -u _printf_float
 
 # Pre- and post-build commands

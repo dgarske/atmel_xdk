@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <asf.h>
 #include <delay.h>
-#include <rtc_calendar.h>
 #include <tcc.h>
 #include <tcc_callback.h>
 
@@ -37,15 +36,23 @@
 
 /* Configure clock debug output pins */
 #define DEBUG_CLOCKS
+#define USE_RTC_COUNTER
+
+#ifdef USE_RTC_COUNTER
+    #include <rtc_count_interrupt.h>
+#else
+    #include <rtc_calendar.h>
+#endif
 
 /* Driver instances */
 static struct usart_module cdc_uart_module;
 struct rtc_module rtc_instance;
-struct tcc_module tcc_instance;
+#ifndef USE_RTC_COUNTER
+    struct tcc_module tcc_instance;
+#endif
 
 /* Local Functions */
 double current_time(int reset);
-void configure_rtc_calendar(void);
 void HardFault_HandlerC(uint32_t *hardfault_args);
 
 /* Hard fault handler */
@@ -138,13 +145,23 @@ void HardFault_Handler(void)
 }
 
 static uint32_t secondCount = 0;
+
+#ifdef USE_RTC_COUNTER
+static void rtc_overflow_callback(void)
+{
+	secondCount++;
+    port_pin_toggle_output_level(LED0_PIN);
+}
+#else
 static void tcc_callback_overflow(
 		struct tcc_module *const module_inst)
 {
 	secondCount++;
     port_pin_toggle_output_level(LED0_PIN);
 }
+#endif
 
+#ifndef USE_RTC_COUNTER
 /**
  * Configure TCC
  */
@@ -161,7 +178,7 @@ static void configure_tcc(void)
 	tcc_conf.counter.clock_prescaler = TCC_CLOCK_PRESCALER_DIV16;
 	tcc_init(&tcc_instance, TCC0, &tcc_conf);
 	tcc_enable(&tcc_instance);
-    
+
 	tcc_register_callback(&tcc_instance, tcc_callback_overflow, TCC_CALLBACK_OVERFLOW);
     tcc_enable_callback(&tcc_instance, TCC_CALLBACK_OVERFLOW);
 }
@@ -182,7 +199,7 @@ static void configure_tcc(void)
                      (__DATE__[1]+__DATE__[2] == 225) ? 7  : (__DATE__[1]+__DATE__[2] == 220) ? 8  : \
                      (__DATE__[1]+__DATE__[2] == 213) ? 9  : (__DATE__[1]+__DATE__[2] == 215) ? 10 : \
                      (__DATE__[1]+__DATE__[2] == 229) ? 11 : (__DATE__[1]+__DATE__[2] == 200) ? 12 : 0)
-void configure_rtc_calendar(void)
+static void configure_rtc_calendar(void)
 {
 	/* Initialize RTC in calendar mode. */
 	struct rtc_calendar_config config_rtc_calendar;
@@ -216,6 +233,29 @@ void configure_rtc_calendar(void)
 	time.second = BUILD_SECOND;
 	rtc_calendar_set_time(&rtc_instance, &time);
 }
+
+#else
+
+static void configure_rtc_count(void)
+{
+	struct rtc_count_config config_rtc_count;
+    rtc_count_get_config_defaults(&config_rtc_count);
+	config_rtc_count.prescaler           = RTC_COUNT_PRESCALER_DIV_1; /* 1ms */
+	config_rtc_count.mode                = RTC_COUNT_MODE_16BIT;
+#ifdef FEATURE_RTC_CONTINUOUSLY_UPDATED
+	config_rtc_count.continuously_update = true;
+#endif
+
+	rtc_count_init(&rtc_instance, RTC, &config_rtc_count);
+	rtc_count_enable(&rtc_instance);
+    
+    rtc_count_set_period(&rtc_instance, 1000);
+    
+	rtc_count_register_callback(&rtc_instance, rtc_overflow_callback, RTC_COUNT_CALLBACK_OVERFLOW);
+	rtc_count_enable_callback(&rtc_instance, RTC_COUNT_CALLBACK_OVERFLOW);
+}
+
+#endif
 
 /**
  *  Configure UART console.
@@ -281,8 +321,15 @@ int main(void)
 #endif
 
 	configure_console();
+
+#ifdef USE_RTC_COUNTER
+    configure_rtc_count();
+#else
     configure_tcc();
     configure_rtc_calendar();
+#endif
+
+    system_interrupt_enable_global();
 
     /* Configure LED */
 	port_get_config_defaults(&pin);
@@ -315,7 +362,12 @@ int main(void)
 
 double current_time(int reset)
 {
+#ifdef USE_RTC_COUNTER
+    uint32_t timer = rtc_count_get_count(&rtc_instance);
+#else
     uint32_t timer = tcc_get_count_value(&tcc_instance);
-    printf("timer=%u\n", timer);
-    return (double)secondCount + (((double)timer / 2) / 1000);
+    timer /= 2;
+#endif
+    //printf("seconds=%u, timer=%u\n", secondCount, timer);
+    return (double)secondCount + (((double)timer) / 1000);
 }
