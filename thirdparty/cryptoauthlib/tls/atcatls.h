@@ -67,6 +67,7 @@
 
 // Configures the device for tls operations
 ATCA_STATUS atcatls_config_default(void);
+ATCA_STATUS atcatls_device_provision(void);
 
 // TLS API Init/finish
 ATCA_STATUS atcatls_init(ATCAIfaceCfg *pCfg);

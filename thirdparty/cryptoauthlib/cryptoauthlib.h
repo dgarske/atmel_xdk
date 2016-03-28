@@ -57,4 +57,6 @@
 #define DBGOUT(message) break
 #define PRINT(message) break
 
+#define ENABLE_RX_POLL 1 /* ms */
+
 #endif

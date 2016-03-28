@@ -46,6 +46,7 @@
 #include "basic/atca_basic.h"
 #include "atcacert/atcacert_client.h"
 #include "atcacert/atcacert_host_hw.h"
+#include <certs/provision.h>
 
 // File scope defines
 // The RSA key will be written to the upper blocks of slot 8
@@ -227,7 +228,7 @@ uint8_t config_data_default[] = {
  *		On a locked ECC508 device, this function will check the configuraiton against the default and fail if it does not match.
  *  \return ATCA_STATUS
  */
-ATCA_STATUS atcatls_config_default()
+ATCA_STATUS atcatls_config_default(void)
 {
 	ATCA_STATUS status = ATCA_SUCCESS;
 	bool isLocked = false;
@@ -267,6 +268,12 @@ ATCA_STATUS atcatls_config_default()
 	} while (0);
 
 	return status;
+}
+
+ATCA_STATUS atcatls_device_provision(void)
+{
+    device_init();
+    return ATCA_SUCCESS;
 }
 
 /** \brief Initialize the ECC508 for use with the TLS API.  Like a constructor

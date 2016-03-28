@@ -303,12 +303,21 @@ ATCA_STATUS atcab_info( uint8_t *revision )
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = ENABLE_RX_POLL;
+    retry:
+#endif
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, &(packet.data[0]), &(packet.rxsize) )) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, &(packet.data[0]), &(packet.rxsize) )) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+        }
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -358,12 +367,22 @@ ATCA_STATUS atcab_random(uint8_t *rand_out)
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS)
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS)
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -412,12 +431,22 @@ ATCA_STATUS atcab_genkey( int slot, uint8_t *pubkey )
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -491,12 +520,22 @@ ATCA_STATUS atcab_challenge(const uint8_t *challenge)
 		if ((status = atsend( _gIface, (uint8_t*)&packet, packet.txsize)) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+      
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ((status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ((status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -548,11 +587,22 @@ ATCA_STATUS atcab_challenge_seed_update( const uint8_t *seed, uint8_t* rand_out 
 		// send the command
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize)) != ATCA_SUCCESS ) break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ((status = atreceive(_gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS) break;
+		if ((status = atreceive(_gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -656,12 +706,22 @@ ATCA_STATUS atcab_verify_extern(const uint8_t *message, const uint8_t *signature
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -714,9 +774,20 @@ ATCA_STATUS atcab_ecdh(uint16_t key_id, const uint8_t* pubkey, uint8_t* ret_ecdh
 
 		if ( (status = atsend(_gIface, (uint8_t*)&packet, packet.txsize)) != ATCA_SUCCESS ) break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		atca_delay_ms(execution_time);
 
-		if ((status = atreceive(_gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS) break;
+		if ((status = atreceive(_gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -947,12 +1018,22 @@ ATCA_STATUS atcab_write_zone(uint8_t zone, uint8_t slot, uint8_t block, uint8_t 
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -1024,12 +1105,22 @@ ATCA_STATUS atcab_read_zone(uint8_t zone, uint8_t slot, uint8_t block, uint8_t o
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif   
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -1202,11 +1293,22 @@ ATCA_STATUS atcab_write_enc(uint8_t slotid, uint8_t block, const uint8_t *data, 
 		// send the command
 		if ((status = atsend(_gIface, (uint8_t*)&packet, packet.txsize)) != ATCA_SUCCESS) BREAK(status, "send write command bytes failed");
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ((status = atreceive(_gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS) BREAK(status, "receive write command bytes failed");
+		if ((status = atreceive(_gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+            BREAK(status, "receive write command bytes failed");
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -1262,14 +1364,24 @@ ATCA_STATUS atcab_read_ecc_config_zone(uint8_t* config_data)
 			if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 				break;
 
+    #ifdef ENABLE_RX_POLL
+            execution_time = 1;
+        retry_1:
+    #endif
+
 			// delay the appropriate amount of time for command to execute
 			atca_delay_ms(execution_time);
 
 			memset(packet.data, 0x00, 130);
 
 			// receive the response
-			if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS )
-				break;
+			if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS ) {
+        #ifdef ENABLE_RX_POLL
+                goto retry_1;
+        #else
+        		break;
+        #endif
+			}  
 
 			// Check response size
 			if (packet.rxsize < 4) {
@@ -1315,14 +1427,24 @@ ATCA_STATUS atcab_read_ecc_config_zone(uint8_t* config_data)
 			if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 				break;
 
+#ifdef ENABLE_RX_POLL
+            execution_time = 1;
+        retry_2:
+#endif
+
 			// delay the appropriate amount of time for command to execute
 			atca_delay_ms(execution_time);
 
 			memset(packet.data, 0x00, sizeof(packet.data));
 
 			// receive the response
-			if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS )
-				break;
+			if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS ) {
+        #ifdef ENABLE_RX_POLL
+                goto retry_2;
+        #else
+        		break;
+        #endif
+			}
 
 			// Check response size
 			if (packet.rxsize < 4) {
@@ -1391,12 +1513,22 @@ ATCA_STATUS atcab_write_ecc_config_zone(const uint8_t* config_data)
 				if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 					break;
 
+#ifdef ENABLE_RX_POLL
+                execution_time = 1;
+            retry_1:
+#endif
+
 				// delay the appropriate amount of time for command to execute
 				atca_delay_ms(execution_time);
 
 				// receive the response
-				if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS )
-					break;
+				if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS ) {
+            #ifdef ENABLE_RX_POLL
+                    goto retry_1;
+            #else
+            		break;
+            #endif
+    			}
 
 				// Check response size
 				if (packet.rxsize < 4) {
@@ -1442,12 +1574,22 @@ ATCA_STATUS atcab_write_ecc_config_zone(const uint8_t* config_data)
 			if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 				break;
 
+#ifdef ENABLE_RX_POLL
+            execution_time = 1;
+        retry_2:
+#endif
+
 			// delay the appropriate amount of time for command to execute
 			atca_delay_ms(execution_time);
 
 			// receive the response
-			if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS )
-				break;
+			if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS ) {
+        #ifdef ENABLE_RX_POLL
+                goto retry_2;
+        #else
+        		break;
+        #endif
+			}
 
 			// Check response size
 			if (packet.rxsize < 4) {
@@ -1642,12 +1784,22 @@ ATCA_STATUS atcab_lock_config_zone(uint8_t* lock_response)
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -1696,12 +1848,22 @@ ATCA_STATUS atcab_lock_data_zone(uint8_t* lock_response)
 		if ((status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ((status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS )
-			break;
+		if ((status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -1751,12 +1913,22 @@ ATCA_STATUS atcab_lock_data_slot(uint8_t slot, uint8_t* lock_response)
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -1812,12 +1984,22 @@ ATCA_STATUS atcab_sign(uint16_t slot, const uint8_t *msg, uint8_t *signature)
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -1903,12 +2085,22 @@ ATCA_STATUS atcab_gendig_host(uint8_t zone, uint16_t key_id, uint8_t *other_data
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -2010,12 +2202,21 @@ ATCA_STATUS atcab_get_pubkey(uint8_t privSlotId, uint8_t *pubkey)
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize) )) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+        }
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -2130,12 +2331,22 @@ ATCA_STATUS atcab_priv_write(uint8_t slot, const uint8_t priv_key[36], uint8_t w
 		if ((status = atsend(_gIface, (uint8_t*)&packet, packet.txsize)) != ATCA_SUCCESS)
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ((status = atreceive(_gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS)
-			break;
+		if ((status = atreceive(_gIface, packet.data, &packet.rxsize)) != ATCA_SUCCESS) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -2602,12 +2813,22 @@ ATCA_STATUS atcab_mac( uint8_t mode, uint16_t key_id, const uint8_t* challenge, 
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms(execution_time);
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -2670,12 +2891,22 @@ ATCA_STATUS atcab_checkmac( uint8_t mode, uint16_t key_id, const uint8_t *challe
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms( execution_time );
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -2723,12 +2954,22 @@ ATCA_STATUS atcab_sha_start(void)
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms( execution_time );
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -2784,12 +3025,22 @@ ATCA_STATUS atcab_sha_update(uint16_t length, const uint8_t *message)
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms( execution_time );
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
@@ -2851,12 +3102,22 @@ ATCA_STATUS atcab_sha_end(uint8_t *digest, uint16_t length, const uint8_t *messa
 		if ( (status = atsend( _gIface, (uint8_t*)&packet, packet.txsize )) != ATCA_SUCCESS )
 			break;
 
+#ifdef ENABLE_RX_POLL
+        execution_time = 1;
+    retry:
+#endif
+
 		// delay the appropriate amount of time for command to execute
 		atca_delay_ms( execution_time );
 
 		// receive the response
-		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS )
-			break;
+		if ( (status = atreceive( _gIface, packet.data, &(packet.rxsize))) != ATCA_SUCCESS ) {
+    #ifdef ENABLE_RX_POLL
+            goto retry;
+    #else
+    		break;
+    #endif
+		}
 
 		// Check response size
 		if (packet.rxsize < 4) {
